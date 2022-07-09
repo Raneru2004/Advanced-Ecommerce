@@ -1,82 +1,79 @@
-import "./App.css"
-import Discounted from "./components/Discounted";
-import Explore from "./components/Explore";
-import Featured from "./components/Featured";
-import Footer from "./components/Footer";
-import Highlights from "./components/Highlights";
-import Landing from "./components/Landing";
-import Nav from "./components/Nav";
-import Home from "./Pages/Home";
-import Books from "./Pages/Books";
-import {BrowserRouter as Router, Route} from "react-router-dom"
-import { books } from './data.js'
-import BookInfo from "./Pages/BookInfo";
-import Cart from "./Pages/Cart";
+import {auth} from "./firebase/init.js" //when you use export const variable you use {} here
+import { signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut, onAuthStateChanged } 
+  from "firebase/auth";
+import './App.css';
 import React, { useState, useEffect } from 'react';
+import Logo from './assets/Logo.png'
 
 function App() {
-  const [cart, setCart]= useState([]);
+  const [user, setUser]= React.useState({}); 
+  const [loading, setLoading] =React.useState(true)
 
-  function addToCart(book){
-    const dupeItem = cart.find((item) => +item.id === +book.id);
-    if (dupeItem){
-      setCart(cart.map(item => {
-      if ( +item.id=== +dupeItem.id){
-        return {
-          ...item,
-          quantity: item.quantity + 1,
-        }
-      } else{
-        return item
+  
+
+  React.useEffect(()=>{
+    onAuthStateChanged(auth, (user) => {   // use this to stay loggedin even when page reloads and closes tab
+      setLoading(false)
+      if (user){
+        setUser(user)
+        
       }
-      }))
-    } else{
-      setCart([...cart, {...book, quantity:1}])
-    }
-  }
-    
-  useEffect(()=>{
-    console.log(cart)
-  },[cart])
-
- 
-    
-  function changeQuantity(book, quantity){
-    setCart(
-      cart.map((item) => 
-        item.id===book.id ? 
-          {
-            ...item,
-            quantity: +quantity
-          } :
-          item
-      )
-    );   
-  }
-
-  function removeItem(item){
-    setCart(cart.filter(book => book.id !== item.id)); //removes that item  
-  }
-
-  function numberOfItems(){
-    let counter =0;
-    cart.forEach( item =>{
-      counter += item.quantity
     })
-    return counter;
+
+
+  }, []) // do this when you wanna run something when page first loads and pass in an emtpy []
+   
+
+  function Register(){
+    createUserWithEmailAndPassword(auth, "email@email.com", "test01")
+  .catch((error) =>{
+    console.log(error)
+  })
+
   }
+  function Login(){
+    
+    signInWithEmailAndPassword(auth, "email@email.com", "test01")// this shows wrong password
+      .catch((error) =>{
+        console.log(error)
+      })
+    setLoading(true)  
+    
+     
+  }
+  
+  function Logout(){
+   
+    signOut(auth)
+    setUser(null); //remove user so set to an object 
+    console.log(user)
+    
+
+
+  }
+
+  
 
   return (
-    <Router>
-      <div className="App">
-        <Nav numberOfItems={numberOfItems()}/>
-        <Route path='/' exact component={Home} />
-        <Route path="/books" exact render={() => <Books books={books} />} />
-        <Route path="/books/:id" render={()=><BookInfo books={books} cart={cart} addToCart={addToCart}/>}/>
-        <Route path="/cart" render={() => <Cart books={books} cart={cart} changeQuantity={changeQuantity} removeItem={removeItem}/>}/>
-        <Footer />
+    <nav>
+      <div className="container">
+        <div className="nav__img--wrapper">
+          <img src={Logo} alt="" className="nav__img" />
+        </div>
+        <div className="buttons"> 
+        
+         { loading ?  <><button className="skeleton__btn">Login</button> <button className="skeleton__btn">Register</button></> :
+         !user ?  <><button onClick={Login}>Login</button> <button onClick={Register}>Register</button></>  
+          : <> <button onClick={Logout} className=" Logged__in">{user.email[0].toUpperCase()}</button></>
+          } 
+
+          
+          
+        </div>
       </div>
-    </Router>  // use a href to direct to new website, Link requires to be reloaded
+    </nav>
   );
 }
 
